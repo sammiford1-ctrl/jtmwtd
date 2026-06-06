@@ -57,6 +57,12 @@ export default function Home() {
   const [multiSelections, setMultiSelections] = useState([]);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [surveyRating, setSurveyRating] = useState("");
+  const [surveyAge, setSurveyAge] = useState("");
+  const [surveyParent, setSurveyParent] = useState("");
+  const [surveyND, setSurveyND] = useState("");
+  const [surveyNote, setSurveyNote] = useState("");
+  const [surveySubmitted, setSurveySubmitted] = useState(false);
 
   const currentQuestion = QUESTIONS[currentQ];
 
@@ -124,6 +130,28 @@ Tell me the one thing to do right now.`;
     }
   };
 
+  const handleSurveySubmit = async () => {
+    const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScew6H1TKJuYTkNBgZhiikAEK36U3SrOx898bTWpwGqIoGLiA/formResponse';
+    const formBody = new URLSearchParams();
+    formBody.append('entry.563027842', surveyRating);
+    formBody.append('entry.954133728', surveyAge);
+    formBody.append('entry.1385490241', surveyParent);
+    formBody.append('entry.1053629610', surveyND);
+    formBody.append('entry.1258871233', surveyNote);
+
+    try {
+      await fetch(FORM_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formBody.toString(),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    setSurveySubmitted(true);
+  };
+
   const reset = () => {
     setStep("intro");
     setCurrentQ(0);
@@ -131,6 +159,12 @@ Tell me the one thing to do right now.`;
     setMultiSelections([]);
     setResult(null);
     setError(null);
+    setSurveyRating("");
+    setSurveyAge("");
+    setSurveyParent("");
+    setSurveyND("");
+    setSurveyNote("");
+    setSurveySubmitted(false);
   };
 
   const totalSteps = QUESTIONS.length;
@@ -158,6 +192,19 @@ Tell me the one thing to do right now.`;
           transform: translateY(-2px);
           box-shadow: 0 8px 30px rgba(60,50,40,0.25) !important;
         }
+        .survey-link {
+          font-size: 0.8rem;
+          color: rgba(100,90,78,0.5);
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+          background: none;
+          border: none;
+          padding: 0;
+        }
+        .survey-link:hover { color: rgba(100,90,78,0.8); }
+        select option { background: #F5F0E8; color: #3C3228; }
       `}</style>
       <div style={styles.root}>
         <div style={styles.texture} />
@@ -240,9 +287,82 @@ Tell me the one thing to do right now.`;
                 {result?.why && <p style={styles.resultWhy}>{result.why}</p>}
               </>
             )}
-            <button className="main-btn" style={{...styles.btn, marginTop: "1rem"}} onClick={reset}>
+            <button className="main-btn" style={{...styles.btn, marginTop: "0.5rem"}} onClick={reset}>
               I need another one
             </button>
+            <button className="survey-link" onClick={() => setStep("survey")}>
+              let us know how that landed →
+            </button>
+          </div>
+        )}
+
+        {step === "survey" && (
+          <div style={styles.card}>
+            {!surveySubmitted ? (
+              <>
+                <p style={styles.questionText}>how did that land?</p>
+                <div style={styles.surveyRow}>
+                  {["🎯 Spot on", "Pretty close", "Not quite"].map((opt) => (
+                    <button
+                      key={opt}
+                      className="opt-btn"
+                      style={{
+                        ...styles.surveyBtn,
+                        background: surveyRating === opt ? "rgba(74,85,65,0.12)" : "rgba(60,50,40,0.04)",
+                        borderColor: surveyRating === opt ? "#7A8C6E" : "rgba(60,50,40,0.12)",
+                        color: surveyRating === opt ? "#3C3228" : "#7A6E62",
+                      }}
+                      onClick={() => setSurveyRating(opt)}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                <div style={styles.surveyDemographics}>
+                  <select style={styles.surveySelect} value={surveyAge} onChange={e => setSurveyAge(e.target.value)}>
+                    <option value="">Age range</option>
+                    <option>18-24</option>
+                    <option>25-34</option>
+                    <option>35-44</option>
+                    <option>45-54</option>
+                    <option>55+</option>
+                  </select>
+                  <select style={styles.surveySelect} value={surveyParent} onChange={e => setSurveyParent(e.target.value)}>
+                    <option value="">Parent?</option>
+                    <option>Yes</option>
+                    <option>No</option>
+                  </select>
+                  <select style={styles.surveySelect} value={surveyND} onChange={e => setSurveyND(e.target.value)}>
+                    <option value="">Neurodivergent?</option>
+                    <option>Yes</option>
+                    <option>No</option>
+                    <option>Unsure</option>
+                  </select>
+                </div>
+                <textarea
+                  style={styles.surveyText}
+                  placeholder="Anything you want us to know? (optional)"
+                  value={surveyNote}
+                  onChange={e => setSurveyNote(e.target.value)}
+                  rows={3}
+                />
+                <button className="main-btn" style={styles.btn} onClick={handleSurveySubmit}>
+                  Submit feedback
+                </button>
+                <button className="survey-link" onClick={reset}>
+                  skip → I need another one
+                </button>
+              </>
+            ) : (
+              <>
+                <p style={{fontSize: "2rem"}}>🖤</p>
+                <p style={styles.resultAction}>thank you.</p>
+                <p style={styles.resultWhy}>your feedback helps us build something better for people like you.</p>
+                <button className="main-btn" style={{...styles.btn, marginTop: "0.5rem"}} onClick={reset}>
+                  I need another one
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -252,7 +372,7 @@ Tell me the one thing to do right now.`;
 
 const styles = {
   root: { minHeight: "100vh", background: "#F5F0E8", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", position: "relative", overflow: "hidden" },
-  texture: { position: "fixed", inset: 0, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`, pointerEvents: "none", zIndex: 0 },
+  texture: { position: "fixed", inset: 0, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E")`, pointerEvents: "none", zIndex: 0 },
   card: { position: "relative", zIndex: 1, maxWidth: 460, width: "100%", background: "rgba(255,252,245,0.85)", border: "1px solid rgba(60,50,40,0.08)", borderRadius: 28, padding: "3rem 2.4rem", backdropFilter: "blur(20px)", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.2rem", textAlign: "center", boxShadow: "0 4px 40px rgba(60,50,40,0.1), 0 1px 0 rgba(255,255,255,0.9) inset" },
   tag: { fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(100,90,78,0.5)", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 },
   title: { fontSize: "clamp(2rem, 7vw, 4rem)", fontWeight: 800, color: "#6B7A5E", lineHeight: 1.1, margin: 0, fontFamily: "'Syne', sans-serif", letterSpacing: "-0.02em", textTransform: "lowercase", transform: "scaleX(0.82)", display: "block" },
@@ -269,4 +389,9 @@ const styles = {
   resultDivider: { width: 48, height: 2, background: "linear-gradient(90deg, #3C3228, #7A8C6E)", borderRadius: 99 },
   resultAction: { fontSize: "1.5rem", fontWeight: 700, color: "#3C3228", lineHeight: 1.45, margin: 0, fontFamily: "'Syne', sans-serif" },
   resultWhy: { fontSize: "0.85rem", color: "rgba(100,90,78,0.6)", lineHeight: 1.75, margin: 0, fontFamily: "'DM Sans', sans-serif" },
+  surveyRow: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", width: "100%" },
+  surveyBtn: { border: "1px solid", borderRadius: 10, padding: "0.5rem 0.8rem", fontSize: "0.8rem", fontFamily: "'DM Sans', sans-serif", cursor: "pointer", transition: "all 0.15s" },
+  surveyDemographics: { display: "flex", gap: 8, flexWrap: "wrap", width: "100%" },
+  surveySelect: { flex: 1, minWidth: 100, background: "rgba(60,50,40,0.04)", border: "1px solid rgba(60,50,40,0.12)", borderRadius: 10, padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontFamily: "'DM Sans', sans-serif", color: "#7A6E62" },
+  surveyText: { width: "100%", background: "rgba(60,50,40,0.04)", border: "1px solid rgba(60,50,40,0.12)", borderRadius: 10, padding: "0.7rem 0.8rem", fontSize: "0.85rem", fontFamily: "'DM Sans', sans-serif", color: "#3C3228", resize: "none", boxSizing: "border-box" },
 };
